@@ -64,9 +64,14 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0f2a2
 .overlay input{font:inherit;font-size:18px;padding:8px 12px;border:3px solid var(--ink);border-radius:8px;text-align:center;width:min(280px,80%)}
 .big{font:inherit;font-weight:700;font-size:clamp(16px,2.6vw,24px);padding:10px 26px;margin-top:12px;background:var(--yellow);color:var(--ink);border:4px solid var(--ink);border-radius:10px;cursor:pointer;box-shadow:4px 4px 0 #000}
 .big:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #000}
-.title-emoji{font-size:clamp(50px,10vw,100px)}
 #mute{position:absolute;top:8px;right:8px;z-index:20;font-size:20px;background:#fffc;border:2px solid var(--ink);border-radius:8px;cursor:pointer;padding:2px 8px}
 .stats{background:#0006;border-radius:10px;padding:8px 16px;margin:8px 0;font-size:clamp(12px,2vw,18px)}
+
+/* Imagen del título / final (con placeholder si falta el archivo) */
+.logo{width:clamp(90px,18vw,170px);height:clamp(90px,18vw,170px);margin:0 auto 8px;display:grid;place-items:center;
+  border:3px dashed #ffffff88;border-radius:12px;font-size:clamp(10px,1.6vw,14px);color:#ffffffbb;background:#0003;overflow:hidden}
+.logo img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+.logo.loaded{border:none;background:none;overflow:visible}
 </style>
 </head>
 <body>
@@ -97,7 +102,7 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0f2a2
   <!-- PANTALLA DE TÍTULO -->
   <div id="title" class="overlay">
     <div>
-      <div class="title-emoji">🌍</div>
+      <div class="logo" id="titleLogo">TU IMAGEN<br>AQUÍ</div>
       <h1>GUARDIANES DEL LAUDATO SI</h1>
       <p>Una aventura inspirada en <i>Laudato si’</i>.</p>
       <p><b>Nombre de tu personaje:</b></p>
@@ -110,7 +115,7 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0f2a2
   <!-- PANTALLA FINAL -->
   <div id="end" class="overlay hidden">
     <div>
-      <div class="title-emoji" id="endEmoji">🏆</div>
+      <div class="logo" id="endLogo">TU IMAGEN<br>AQUÍ</div>
       <h1 id="endTitle"></h1>
       <div class="stats" id="endStats"></div>
       <p id="endMsg"></p>
@@ -121,18 +126,22 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0f2a2
 
 <script>
 /* =====================================================================
-   1) RECURSOS (SPRITES Y AUDIO)  ← AQUÍ PONES TUS ARCHIVOS
-   Si un archivo no existe o falla, el juego usa un emoji / sonido simple
-   de reemplazo automáticamente, así que funciona desde ya.
+   1) RECURSOS (SPRITES, IMÁGENES Y AUDIO)  ← AQUÍ PONES TUS ARCHIVOS
+   Si un archivo no existe o falla, el juego usa un emoji / placeholder /
+   sonido simple de reemplazo automáticamente.
    ===================================================================== */
 const ASSETS = {
+  images: {
+    titleLogo: "assets/ui/logo_titulo.png",   // imagen de la pantalla de título (antes el emoji 🌍)
+    endLogo:   "assets/ui/logo_final.png"     // imagen de la pantalla final (antes el emoji 🏆)
+  },
   backgrounds: {
     battle: "",                         // ej: "assets/fondo_batalla.png"  (el CSS usa --bg-img)
     title:  ""                          // ej: "assets/fondo_titulo.png"
   },
   sprites: {
-    player: "assets/sprites/guardian.png",     // espalda del jugador
-    // los enemigos se definen más abajo, en ENEMIES[].sprite
+    player: "assets/sprites/guardian.png"      // sprite por defecto del jugador (se usa si un enemigo no define el suyo)
+    // El sprite del jugador para cada combate se define en ENEMIES[].playerSprite
   },
   music: {
     title:  "assets/audio/musica_titulo.mp3",
@@ -164,18 +173,23 @@ const MOVES = {
   esperanza: {name:"Esperanza",    icon:"🕊️", power:18}
 };
 
-// Enemigos
+// Enemigos. `sprite` = imagen del enemigo, `playerSprite` = imagen del jugador en ESE combate.
 const ENEMIES = [
-  {name:"Plastiquín",   emoji:"🛍️", hp:60,  weak:"habitos",    sprite:"assets/sprites/enemigo1.png",
+  {name:"Plastiquín",   emoji:"🛍️", hp:60,  weak:"habitos",
+   sprite:"assets/sprites/enemigo1.png", playerSprite:"assets/sprites/guardian_1.png", playerEmoji:"🧒",
    intro:"Un Plastiquín bloquea el camino.",
    attacks:["Lluvia de bolsas","Nube de microplásticos","Ecosistema asfixiante"]},
-  {name:"Indiferencio", emoji:"🧊", hp:80,  weak:"amor",       sprite:"assets/sprites/enemigo2.png",
+  {name:"Indiferencio", emoji:"🧊", hp:80,  weak:"amor",
+   sprite:"assets/sprites/enemigo2.png", playerSprite:"assets/sprites/guardian_2.png", playerEmoji:"🧑",
    intro:"Indiferencio aparece.",
    attacks:["Mirada fría","Dar la espalda","Silencio"]},
-  {name:"Consumón",     emoji:"🛒", hp:100, weak:"conversion", sprite:"assets/sprites/enemigo3.png",
+  {name:"Consumón",     emoji:"🛒", hp:100, weak:"conversion",
+   sprite:"assets/sprites/enemigo3.png", playerSprite:"assets/sprites/guardian_3.png", playerEmoji:"🧑‍🌾",
    intro:"Consumón llega arrastrando un carrito sin fondo. ",
    attacks:["Compra compulsiva","Oferta irresistible","Montaña de cosas"]},
-  {name:"Desesperanza", emoji:"🌫️", hp:130, weak:"esperanza",  sprite:"assets/sprites/jefe.png", boss:true,
+  {name:"Desesperanza", emoji:"🌫️", hp:130, weak:"esperanza",
+   sprite:"assets/sprites/jefe.png", playerSprite:"assets/sprites/guardian_jefe.png", playerEmoji:"🦸",
+   boss:true,
    intro:"¡La Desesperanza, jefa final, cubre el cielo de niebla!",
    attacks:["Niebla de duda","“Desesperanza”","Ola de desánimo"]}
 ];
@@ -254,27 +268,23 @@ const Sound = (() => {
   }
   function music(key){
     if(musicKey!==key){
-        if(musicEl){
-            musicEl.pause();
-            musicEl=null;
-        }
-
-        musicKey=key;
-
-        const src=ASSETS.music[key];
-        if(!src)return;
-
-        musicEl=new Audio(src);
-        musicEl.loop=(key!=="victory");
-        musicEl.volume=0.08;
+      if(musicEl){
+        musicEl.pause();
+        musicEl=null;
+      }
+      musicKey=key;
+      const src=ASSETS.music[key];
+      if(!src)return;
+      musicEl=new Audio(src);
+      musicEl.loop=(key!=="victory");
+      musicEl.volume=0.08;
     }
-
     // Siempre intenta reproducir, incluso si ya estaba seleccionada.
     if(!muted && musicEl && musicEl.paused){
-        const p=musicEl.play();
-        if(p && p.catch)p.catch(()=>{});
+      const p=musicEl.play();
+      if(p && p.catch)p.catch(()=>{});
     }
-}
+  }
   function toggle(){
     muted=!muted;
     if(muted&&musicEl)musicEl.pause();
@@ -304,6 +314,16 @@ function setSprite(el, src, emoji){
   fallback();            // mientras carga, muestra el emoji
   img.src = src;
 }
+
+// Imagen de título/final: si no existe el archivo, deja el recuadro "TU IMAGEN AQUÍ"
+function setLogo(el, src){
+  if(!src)return;
+  const img = new Image();
+  img.alt = "";
+  img.onload = () => { el.replaceChildren(img); el.classList.add("loaded"); };
+  img.src = src;         // si falla, no pasa nada: queda el placeholder
+}
+
 function anim(el, cls, ms=500){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); return sleep(ms).then(()=>el.classList.remove(cls)); }
 
 // Texto estilo máquina de escribir
@@ -406,7 +426,7 @@ async function playerAttack(cat){
   await sleep(250);
   $("fx").textContent=m.icon; $("fx").style.left="46%"; $("fx").style.top="28%";
   Sound.sfx("hit");
-  anim($("enemySprite"),"shake",450); 
+  anim($("enemySprite"),"shake",450);
   e.hp=Math.max(0,e.hp-dmg); setHp($("eHp"),e.hp,e.max);
   await sleep(500); $("fx").textContent="";
   await say(`Hizo ${dmg} de daño.`,{hold:100});
@@ -447,7 +467,8 @@ async function battle(){
   G.enemy = {...base, max:base.hp};
   Sound.music(base.boss?"boss":"battle");
   setSprite($("enemySprite"),base.sprite,base.emoji);
-  setSprite($("playerSprite"),ASSETS.sprites.player,"🧒");
+  // Sprite del jugador específico para este enemigo (si no existe, usa el por defecto)
+  setSprite($("playerSprite"), base.playerSprite || ASSETS.sprites.player, base.playerEmoji || "🧒");
   $("enemySprite").className="sprite enter"; $("enemySprite").style.opacity=1;
   refreshUI();
   await say(base.intro);
@@ -526,6 +547,8 @@ function finish(){
    ===================================================================== */
 if(ASSETS.backgrounds.battle) $("field").style.setProperty("--bg-img",`url("${ASSETS.backgrounds.battle}")`);
 if(ASSETS.backgrounds.title)  $("title").style.setProperty("--title-img",`url("${ASSETS.backgrounds.title}")`);
+setLogo($("titleLogo"), ASSETS.images.titleLogo);
+setLogo($("endLogo"),   ASSETS.images.endLogo);
 
 $("mute").onclick=()=>{ $("mute").textContent = Sound.toggle()?"🔇":"🔊"; };
 $("startBtn").onclick=()=>{
