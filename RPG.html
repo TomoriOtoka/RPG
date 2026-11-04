@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Guardianes de la casa común · RPG</title>
+<style>
+:root{--ink:#1d2a22;--paper:#f8f4e3;--green:#2f8f5b;--red:#d9534f;--yellow:#e8c547;--shadow:#0006}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0f2a20;font-family:"Courier New",ui-monospace,monospace;color:var(--ink)}
+#game{position:relative;width:min(960px,100vw);aspect-ratio:16/10;max-height:100vh;background:#000;overflow:hidden;border:4px solid #12372a;image-rendering:pixelated}
+@media (max-aspect-ratio:4/3){#game{aspect-ratio:3/4}}
+.hidden{display:none!important}
+
+/* ===== Escena ===== */
+#field{position:absolute;inset:0 0 34% 0;overflow:hidden;
+  background:var(--bg-img,none),linear-gradient(#9fd8f0 0 45%,#6bbd6e 45% 62%,#4e9d57 62%);background-size:cover;background-position:center}
+#field::before{content:"";position:absolute;right:6%;top:30%;width:42%;height:12%;background:radial-gradient(ellipse,#3c8548 0 60%,transparent 62%);opacity:.8}
+#field::after{content:"";position:absolute;left:4%;bottom:-6%;width:50%;height:22%;background:radial-gradient(ellipse,#3a7a43 0 60%,transparent 62%);opacity:.8}
+.sprite{position:absolute;display:grid;place-items:center;transition:transform .2s,opacity .5s;z-index:2}
+.sprite img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+.sprite .emoji{font-size:clamp(60px,14vw,140px);filter:drop-shadow(0 6px 0 var(--shadow));line-height:1}
+#enemySprite{right:12%;top:12%;width:26%;height:38%}
+#playerSprite{left:10%;bottom:4%;width:30%;height:42%}
+#playerSprite .emoji{transform:scaleX(-1)}
+.infobox{position:absolute;z-index:3;background:var(--paper);border:3px solid var(--ink);border-radius:10px;padding:6px 10px;box-shadow:3px 3px 0 var(--shadow);min-width:200px;width:34%}
+.infobox .row{display:flex;justify-content:space-between;font-weight:700;font-size:clamp(11px,1.8vw,16px)}
+.hpwrap{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:clamp(10px,1.5vw,13px);font-weight:700}
+.hpbar{flex:1;height:10px;background:#555;border:2px solid var(--ink);border-radius:6px;overflow:hidden}
+.hpfill{height:100%;width:100%;background:#4caf50;transition:width .7s linear,background .3s}
+.hint{font-size:clamp(9px,1.3vw,12px);color:#6a5a1a;margin-top:3px}
+#enemyBox{left:4%;top:6%}
+#playerBox{right:4%;bottom:6%}
+#hpnum{text-align:right;font-size:clamp(10px,1.5vw,13px);font-weight:700}
+
+/* ===== Animaciones ===== */
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-12px)}40%{transform:translateX(12px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}
+@keyframes flash{0%,100%{opacity:1}25%,75%{opacity:.1}50%{opacity:1}}
+@keyframes lungeR{50%{transform:translate(40px,-20px)}}
+@keyframes lungeL{50%{transform:translate(-40px,20px)}}
+@keyframes faint{to{transform:translateY(60px);opacity:0}}
+@keyframes enter{from{transform:translateX(120px);opacity:0}}
+@keyframes heal{50%{filter:brightness(1.8) saturate(1.5)}}
+.shake{animation:shake .4s}.flash{animation:flash .5s}.lungeR{animation:lungeR .35s}.lungeL{animation:lungeL .35s}.faint{animation:faint .8s forwards}.enter{animation:enter .7s}.heal{animation:heal .8s}
+#fx{position:absolute;z-index:4;font-size:clamp(30px,6vw,64px);pointer-events:none;transition:all .5s}
+
+/* ===== Panel inferior ===== */
+#bottom{position:absolute;left:0;right:0;bottom:0;height:34%;display:grid;grid-template-columns:1.25fr 1fr;background:#1a1a1a;padding:6px;gap:6px}
+#textbox{background:var(--paper);border:4px solid var(--ink);border-radius:10px;padding:10px 14px;font-size:clamp(12px,2.1vw,20px);line-height:1.35;overflow:auto;position:relative;cursor:pointer}
+#textbox .more{position:absolute;right:10px;bottom:4px;animation:flash 1s infinite}
+#menu{background:var(--paper);border:4px solid var(--ink);border-radius:10px;padding:6px;display:grid;gap:5px;grid-template-columns:1fr 1fr;align-content:stretch;overflow:auto}
+#menu.one{grid-template-columns:1fr}
+#menu button{font:inherit;font-weight:700;font-size:clamp(10px,1.8vw,16px);background:#fff;border:3px solid var(--ink);border-radius:8px;padding:4px 8px;cursor:pointer;text-align:left;min-height:34px;display:flex;align-items:center;gap:6px}
+#menu button:hover,#menu button:focus-visible{background:var(--yellow);outline:none}
+#menu button:disabled{opacity:.4;cursor:not-allowed}
+#menu button small{display:block;font-weight:400;font-size:.75em}
+#menu button b{opacity:.5}
+
+/* ===== Overlays ===== */
+.overlay{position:absolute;inset:0;z-index:10;display:grid;place-items:center;text-align:center;padding:20px;
+  background:var(--title-img,none),radial-gradient(circle at 50% 30%,#2f8f5b,#0f2a20);background-size:cover;color:#fff}
+.overlay h1{font-size:clamp(24px,5.5vw,54px);margin:0 0 6px;text-shadow:3px 3px 0 #000;letter-spacing:1px}
+.overlay p{font-size:clamp(12px,2vw,18px);max-width:560px;margin:6px auto}
+.overlay input{font:inherit;font-size:18px;padding:8px 12px;border:3px solid var(--ink);border-radius:8px;text-align:center;width:min(280px,80%)}
+.big{font:inherit;font-weight:700;font-size:clamp(16px,2.6vw,24px);padding:10px 26px;margin-top:12px;background:var(--yellow);color:var(--ink);border:4px solid var(--ink);border-radius:10px;cursor:pointer;box-shadow:4px 4px 0 #000}
+.big:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #000}
+.title-emoji{font-size:clamp(50px,10vw,100px)}
+#mute{position:absolute;top:8px;right:8px;z-index:20;font-size:20px;background:#fffc;border:2px solid var(--ink);border-radius:8px;cursor:pointer;padding:2px 8px}
+.stats{background:#0006;border-radius:10px;padding:8px 16px;margin:8px 0;font-size:clamp(12px,2vw,18px)}
+</style>
+</head>
+<body>
+<div id="game">
+  <button id="mute" title="Sonido">🔊</button>
+
+  <!-- ESCENA DE COMBATE -->
+  <div id="field">
+    <div id="enemyBox" class="infobox">
+      <div class="row"><span id="eName"></span><span id="eLv"></span></div>
+      <div class="hpwrap">HP<div class="hpbar"><div id="eHp" class="hpfill"></div></div></div>
+      <div class="hint" id="eWeak"></div>
+    </div>
+    <div id="enemySprite" class="sprite"></div>
+    <div id="playerSprite" class="sprite"></div>
+    <div id="playerBox" class="infobox">
+      <div class="row"><span id="pName"></span><span id="pLv"></span></div>
+      <div class="hpwrap">HP<div class="hpbar"><div id="pHp" class="hpfill"></div></div></div>
+      <div id="hpnum"></div>
+    </div>
+    <div id="fx"></div>
+  </div>
+  <div id="bottom">
+    <div id="textbox"></div>
+    <div id="menu"></div>
+  </div>
+
+  <!-- PANTALLA DE TÍTULO -->
+  <div id="title" class="overlay">
+    <div>
+      <div class="title-emoji">🌍</div>
+      <h1>GUARDIANES DEL LAUDATO SI</h1>
+      <p>Una aventura inspirada en <i>Laudato si’</i>.</p>
+      <p><b>Nombre de tu personaje:</b></p>
+      <input id="nameInput" maxlength="12" placeholder="Personaje" autocomplete="off">
+      <br><button class="big" id="startBtn">▶ COMENZAR</button>
+      <p style="font-size:12px;opacity:.8">Teclas 1–4 para elegir · clic o Enter para avanzar el texto</p>
+    </div>
+  </div>
+
+  <!-- PANTALLA FINAL -->
+  <div id="end" class="overlay hidden">
+    <div>
+      <div class="title-emoji" id="endEmoji">🏆</div>
+      <h1 id="endTitle"></h1>
+      <div class="stats" id="endStats"></div>
+      <p id="endMsg"></p>
+      <button class="big" id="againBtn">↺ JUGAR DE NUEVO</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   1) RECURSOS (SPRITES Y AUDIO)  ← AQUÍ PONES TUS ARCHIVOS
+   Si un archivo no existe o falla, el juego usa un emoji / sonido simple
+   de reemplazo automáticamente, así que funciona desde ya.
+   ===================================================================== */
+const ASSETS = {
+  backgrounds: {
+    battle: "",                         // ej: "assets/fondo_batalla.png"  (el CSS usa --bg-img)
+    title:  ""                          // ej: "assets/fondo_titulo.png"
+  },
+  sprites: {
+    player: "assets/sprites/guardian.png",     // espalda del jugador
+    // los enemigos se definen más abajo, en ENEMIES[].sprite
+  },
+  music: {
+    title:  "assets/audio/musica_titulo.mp3",
+    battle: "assets/audio/musica_batalla.mp3",
+    boss:   "assets/audio/musica_jefe.mp3",
+    victory:"assets/audio/musica_victoria.mp3"
+  },
+  sfx: {
+    select:  "assets/audio/sfx_seleccion.wav",
+    correct: "assets/audio/sfx_correcto.wav",
+    wrong:   "assets/audio/sfx_error.wav",
+    hit:     "assets/audio/sfx_golpe.wav",
+    hurt:    "assets/audio/sfx_dano.wav",
+    heal:    "assets/audio/sfx_curar.wav",
+    faint:   "assets/audio/sfx_derrota_enemigo.wav",
+    win:     "assets/audio/sfx_ganar.wav",
+    lose:    "assets/audio/sfx_perder.wav"
+  }
+};
+
+/* =====================================================================
+   2) DATOS DEL JUEGO
+   ===================================================================== */
+// Ataques: cada uno se lanza respondiendo una pregunta de su categoría.
+const MOVES = {
+  habitos:   {name:"Hábito verde", icon:"🌱", power:18},
+  amor:      {name:"Amor social",  icon:"🤝", power:18},
+  conversion:{name:"Conversión",   icon:"🔄", power:18},
+  esperanza: {name:"Esperanza",    icon:"🕊️", power:18}
+};
+
+// Enemigos
+const ENEMIES = [
+  {name:"Plastiquín",   emoji:"🛍️", hp:60,  weak:"habitos",    sprite:"assets/sprites/enemigo1.png",
+   intro:"Un Plastiquín bloquea el camino.",
+   attacks:["Lluvia de bolsas","Nube de microplásticos","Ecosistema asfixiante"]},
+  {name:"Indiferencio", emoji:"🧊", hp:80,  weak:"amor",       sprite:"assets/sprites/enemigo2.png",
+   intro:"Indiferencio aparece.",
+   attacks:["Mirada fría","Dar la espalda","Silencio"]},
+  {name:"Consumón",     emoji:"🛒", hp:100, weak:"conversion", sprite:"assets/sprites/enemigo3.png",
+   intro:"Consumón llega arrastrando un carrito sin fondo. ",
+   attacks:["Compra compulsiva","Oferta irresistible","Montaña de cosas"]},
+  {name:"Desesperanza", emoji:"🌫️", hp:130, weak:"esperanza",  sprite:"assets/sprites/jefe.png", boss:true,
+   intro:"¡La Desesperanza, jefa final, cubre el cielo de niebla!",
+   attacks:["Niebla de duda","“Desesperanza”","Ola de desánimo"]}
+];
+
+// Preguntas (la 1ª opción es la correcta; se mezclan al mostrarlas)
+const Q = {
+  habitos:[
+    ["¿Qué haces con las luces que no necesitas?","Apagarlas","Dejarlas prendidas","Prender más"],
+    ["Al cepillarte los dientes, ¿qué es mejor?","Cerrar el grifo mientras cepillas","Dejar el agua corriendo","Llenar la tina"],
+    ["¿Qué conviene usar para llevar tu bebida?","Un termo reutilizable","Una botella desechable cada vez","Vasos de plástico"],
+    ["Sobró comida de la cena. ¿Qué haces?","Guardarla o compartirla","Botarla a la basura","Tirarla al río"],
+    ["¿Dónde va la basura?","En su basurero","En el suelo","En el río"],
+    ["La educación ambiental se concreta en…","Hábitos de cada día","Solo en los libros","Nunca se concreta"]
+  ],
+  amor:[
+    ["El parque del barrio está descuidado. ¿Qué haces?","Organizar con vecinos una jornada de cuidado","Ignorarlo","Ensuciarlo más"],
+    ["Un compañero está triste. ¿Qué haces?","Acompañarlo y escucharlo","Burlarme","Ignorarlo"],
+    ["El amor social busca…","El bien común","Solo mi beneficio","Competir con todos"],
+    ["¿Quiénes sufren más el daño ambiental?","Las personas más pobres","Nadie","Solo los turistas"],
+    ["¿Qué gesto expresa amor cotidiano?","Saludar con amabilidad y ayudar","Gritar","Excluir a otros"],
+    ["¿Dónde aprendemos los primeros hábitos de cuidado?","En la familia","En ninguna parte","Solo en las tiendas"]
+  ],
+  conversion:[
+    ["La conversión ecológica es…","Cambiar por dentro y actuar","Hablar sin cambiar nada","Culpar a los demás"],
+    ["Si reconoces que dañaste la creación, ¿qué haces?","Reconocerlo y cambiar mi conducta","Negarlo siempre","Ignorarlo"],
+    ["¿Qué actitud acompaña la conversión ecológica?","Gratitud por el mundo recibido","Avaricia","Indiferencia"],
+    ["¿La conversión ecológica es solo individual?","No, también es comunitaria","Sí, nadie más importa","Solo es de las empresas"],
+    ["Vivir con sobriedad significa…","Valorar lo necesario y disfrutar lo sencillo","Acumular sin límite","Comprar cada vez más"],
+    ["¿Quién escribió Laudato si’?","El papa Francisco","Un científico famoso","Un alcalde"]
+  ],
+  esperanza:[
+    ["Laudato si’ significa…","Alabado seas","La voz del pueblo","La paz de todos"],
+    ["La «casa común» es…","El planeta que todos compartimos","Solo la casa de mi familia","Únicamente una iglesia"],
+    ["Laudato si’ termina con…","Dos oraciones por la creación","Una lista de compras","Un catálogo de productos"],
+    ["¿Qué actitud propone el final del capítulo 6?","Cuidar el mundo sin perder la esperanza","Rendirse","Esperar sin actuar"],
+    ["¿Qué aprendemos de san José?","Proteger y servir con ternura","Ignorar a los débiles","Buscar reconocimiento"],
+    ["El descanso nos ayuda a…","Renovar la relación con Dios, los demás y el mundo","Gastar más","Nada"]
+  ]
+};
+
+/* =====================================================================
+   3) AUDIO (con respaldo si no hay archivos)
+   ===================================================================== */
+const Sound = (() => {
+  let muted = false, ctx = null, musicEl = null, musicKey = null;
+  const cache = {};
+  const tones = { // [frecuencia, duración, tipo] de respaldo
+    select:[[660,.06,"square"]], correct:[[523,.1,"square"],[784,.18,"square"]],
+    wrong:[[200,.2,"sawtooth"],[150,.25,"sawtooth"]], hit:[[300,.05,"square"],[120,.15,"sawtooth"]],
+    hurt:[[180,.12,"square"],[100,.2,"square"]], heal:[[440,.1,"sine"],[660,.1,"sine"],[880,.2,"sine"]],
+    faint:[[400,.1,"triangle"],[300,.1,"triangle"],[200,.3,"triangle"]],
+    win:[[523,.15,"square"],[659,.15,"square"],[784,.15,"square"],[1047,.35,"square"]],
+    lose:[[392,.2,"triangle"],[330,.2,"triangle"],[262,.5,"triangle"]]
+  };
+  function beep(key){
+    if(muted||!tones[key])return;
+    try{
+      ctx = ctx || new (window.AudioContext||window.webkitAudioContext)();
+      let t = ctx.currentTime;
+      tones[key].forEach(([f,d,type])=>{
+        const o=ctx.createOscillator(), g=ctx.createGain();
+        o.type=type; o.frequency.value=f; g.gain.value=.08;
+        g.gain.exponentialRampToValueAtTime(.001,t+d);
+        o.connect(g).connect(ctx.destination); o.start(t); o.stop(t+d); t+=d;
+      });
+    }catch(e){}
+  }
+  function sfx(key){
+    if(muted)return;
+    const src = ASSETS.sfx[key];
+    if(!src){beep(key);return;}
+    let a = cache[key];
+    if(!a){ a=cache[key]=new Audio(src); a.dataset.failed="0"; a.addEventListener("error",()=>{a.dataset.failed="1"}); }
+    if(a.dataset.failed==="1"){beep(key);return;}
+    try{ a.currentTime=0; const p=a.play(); if(p&&p.catch)p.catch(()=>beep(key)); }catch(e){beep(key);}
+  }
+  function music(key){
+    if(musicKey!==key){
+        if(musicEl){
+            musicEl.pause();
+            musicEl=null;
+        }
+
+        musicKey=key;
+
+        const src=ASSETS.music[key];
+        if(!src)return;
+
+        musicEl=new Audio(src);
+        musicEl.loop=(key!=="victory");
+        musicEl.volume=0.08;
+    }
+
+    // Siempre intenta reproducir, incluso si ya estaba seleccionada.
+    if(!muted && musicEl && musicEl.paused){
+        const p=musicEl.play();
+        if(p && p.catch)p.catch(()=>{});
+    }
+}
+  function toggle(){
+    muted=!muted;
+    if(muted&&musicEl)musicEl.pause();
+    else if(musicEl){const p=musicEl.play(); if(p&&p.catch)p.catch(()=>{});}
+    return muted;
+  }
+  return {sfx,music,toggle};
+})();
+
+/* =====================================================================
+   4) UTILIDADES DE INTERFAZ
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+const rand = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+
+// Sprite con respaldo de emoji
+function setSprite(el, src, emoji){
+  el.replaceChildren();
+  const fallback = () => { el.replaceChildren(); const s=document.createElement("span"); s.className="emoji"; s.textContent=emoji; el.append(s); };
+  if(!src){fallback();return;}
+  const img = new Image();
+  img.alt = "";
+  img.onload = () => { el.replaceChildren(img); };
+  img.onerror = fallback;
+  fallback();            // mientras carga, muestra el emoji
+  img.src = src;
+}
+function anim(el, cls, ms=500){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); return sleep(ms).then(()=>el.classList.remove(cls)); }
+
+// Texto estilo máquina de escribir
+let skipTyping = false, advance = null;
+function say(text, {wait=true, hold=900}={}){
+  return new Promise(async resolve => {
+    const box = $("textbox");
+    box.textContent = ""; skipTyping = false;
+    for(let i=0;i<text.length;i++){
+      if(skipTyping){box.textContent=text;break;}
+      box.textContent += text[i];
+      await sleep(16);
+    }
+    if(!wait){resolve();return;}
+    const more=document.createElement("span"); more.className="more"; more.textContent="▼"; box.append(more);
+    let done=false;
+    const finish=()=>{ if(done)return; done=true; advance=null; resolve(); };
+    advance=finish;
+    setTimeout(finish, 2600+hold);   // avanza solo si no tocan nada
+  });
+}
+$("textbox").addEventListener("click",()=>{ skipTyping=true; if(advance)advance(); });
+document.addEventListener("keydown",e=>{
+  if(e.key==="Enter"||e.key===" "){ if($("title").classList.contains("hidden") && $("end").classList.contains("hidden")){ skipTyping=true; if(advance){e.preventDefault();advance();} } }
+});
+
+// Menú de botones → devuelve el índice elegido
+function choose(options, {cols=2}={}){
+  return new Promise(resolve=>{
+    const menu=$("menu"); menu.replaceChildren(); menu.classList.toggle("one",cols===1);
+    const handler = e => {
+      const n = parseInt(e.key,10);
+      if(n>=1 && n<=options.length && !options[n-1].disabled){ pick(n-1); }
+    };
+    const pick = i => { Sound.sfx("select"); document.removeEventListener("keydown",handler); menu.replaceChildren(); resolve(i); };
+    options.forEach((o,i)=>{
+      const b=document.createElement("button");
+      b.disabled=!!o.disabled;
+      b.innerHTML = `<b>${i+1}</b> <span>${o.label}${o.sub?`<small>${o.sub}</small>`:""}</span>`;
+      b.addEventListener("click",()=>pick(i));
+      menu.append(b);
+    });
+    document.addEventListener("keydown",handler);
+  });
+}
+
+function setHp(bar, hp, max){
+  const pct=Math.max(0,hp/max*100);
+  bar.style.width=pct+"%";
+  bar.style.background = pct>50?"#4caf50":pct>20?"#e8c547":"#d9534f";
+}
+
+/* =====================================================================
+   5) LÓGICA DEL JUEGO
+   ===================================================================== */
+let G;
+function newGame(name){
+  G = { player:{name:name||"Guardián", hp:100, max:100, lv:1, heals:3, streak:0},
+        idx:0, enemy:null, stats:{ok:0,total:0,defeated:0}, pools:{} };
+}
+function nextQuestion(cat){
+  if(!G.pools[cat]||!G.pools[cat].length) G.pools[cat]=shuffle(Q[cat]);
+  return G.pools[cat].pop();
+}
+function refreshUI(){
+  const p=G.player, e=G.enemy;
+  $("pName").textContent=p.name; $("pLv").textContent="Nv."+p.lv;
+  setHp($("pHp"),p.hp,p.max); $("hpnum").textContent=`${Math.max(0,p.hp)} / ${p.max}   🎒 Gratitud x${p.heals}`;
+  if(e){
+    $("eName").textContent=e.name; $("eLv").textContent="Nv."+(G.idx+1);
+    setHp($("eHp"),e.hp,e.max);
+  }
+}
+
+// Hace una pregunta fácil. Devuelve true si acierta.
+async function ask(cat){
+  const [q,...opts] = nextQuestion(cat);
+  const correctText = opts[0];
+  const shuffled = shuffle(opts);
+  $("textbox").textContent = `${MOVES[cat].icon} ${q}`;
+  const i = await choose(shuffled.map(t=>({label:t})), {cols:1});
+  G.stats.total++;
+  const ok = shuffled[i]===correctText;
+  if(ok){ G.stats.ok++; Sound.sfx("correct"); await say("¡Correcto!",{hold:200}); }
+  else { Sound.sfx("wrong"); await say(`¡Incorrecto! La respuesta era: «${correctText}».`); }
+  return ok;
+}
+
+async function playerAttack(cat){
+  const p=G.player, e=G.enemy, m=MOVES[cat];
+  const ok = await ask(cat);
+  if(!ok){ p.streak=0; await say(`¡${m.name} falló!`); return; }
+  p.streak++;
+  await say(`¡${p.name} usó ${m.name}!`,{hold:100});
+  let dmg = m.power + (p.lv-1)*2 + rand(0,4);
+  let notes=[];
+  if(cat===e.weak){ dmg=Math.round(dmg*1.5); notes.push("¡Es muy eficaz!"); }
+  if(p.streak>=2){ dmg=Math.round(dmg*1.25); notes.push(`¡Racha x${p.streak}! Golpe crítico.`); }
+  anim($("playerSprite"),"lungeR",350);
+  await sleep(250);
+  $("fx").textContent=m.icon; $("fx").style.left="46%"; $("fx").style.top="28%";
+  Sound.sfx("hit");
+  anim($("enemySprite"),"shake",450); 
+  e.hp=Math.max(0,e.hp-dmg); setHp($("eHp"),e.hp,e.max);
+  await sleep(500); $("fx").textContent="";
+  await say(`Hizo ${dmg} de daño.`,{hold:100});
+  for(const n of notes) await say(n,{hold:100});
+}
+
+async function playerHeal(){
+  const p=G.player;
+  if(p.heals<=0){ await say("¡Ya no te quedan Gratitudes!"); return false; }
+  const ok = await ask("conversion");
+  p.heals--;
+  if(!ok){ p.streak=0; await say("La Gratitud no funcionó esta vez…"); return true; }
+  p.streak++;
+  const gain=Math.min(35,p.max-p.hp); p.hp+=gain;
+  Sound.sfx("heal"); anim($("playerSprite"),"heal",800);
+  setHp($("pHp"),p.hp,p.max);
+  await say(`🙏 Gratitud: recuperaste ${gain} HP.`);
+  return true;
+}
+
+async function enemyTurn(){
+  const e=G.enemy, p=G.player;
+  const atk = e.attacks[rand(0,e.attacks.length-1)];
+  await say(`${e.name} usó ${atk}.`,{hold:100});
+  anim($("enemySprite"),"lungeL",350);
+  await sleep(250);
+  const dmg = rand(7,12) + (e.boss?4:0) + Math.floor(G.idx*1.5);
+  Sound.sfx("hurt");
+  anim($("playerSprite"),"shake",450);
+  p.hp=Math.max(0,p.hp-dmg); setHp($("pHp"),p.hp,p.max);
+  refreshUI();
+  await sleep(500);
+  await say(`${p.name} perdió ${dmg} HP.`,{hold:100});
+}
+
+async function battle(){
+  const base = ENEMIES[G.idx];
+  G.enemy = {...base, max:base.hp};
+  Sound.music(base.boss?"boss":"battle");
+  setSprite($("enemySprite"),base.sprite,base.emoji);
+  setSprite($("playerSprite"),ASSETS.sprites.player,"🧒");
+  $("enemySprite").className="sprite enter"; $("enemySprite").style.opacity=1;
+  refreshUI();
+  await say(base.intro);
+  await say(`¡Adelante, ${G.player.name}!`,{hold:100});
+
+  while(G.player.hp>0 && G.enemy.hp>0){
+    $("textbox").textContent=`¿Qué hará ${G.player.name}?`;
+    const main = await choose([
+      {label:"⚔️ LUCHAR"},
+      {label:`🙏 GRATITUD`, sub:`Curar · quedan ${G.player.heals}`, disabled:G.player.heals<=0}
+    ]);
+    if(main===1){
+      await playerHeal();
+    } else {
+      $("textbox").textContent="Elige un ataque (responderás una pregunta):";
+      const keys=Object.keys(MOVES);
+      const opts=keys.map(k=>({label:`${MOVES[k].icon} ${MOVES[k].name}`})).concat([{label:"↩ Volver"}]);
+      const c = await choose(opts);
+      if(c===keys.length) continue;
+      await playerAttack(keys[c]);
+    }
+    refreshUI();
+    if(G.enemy.hp<=0) break;
+    await sleep(300);
+    await enemyTurn();
+  }
+
+  if(G.player.hp<=0) return "lose";
+  // Victoria sobre el enemigo
+  Sound.sfx("faint");
+  await anim($("enemySprite"),"faint",800);
+  $("enemySprite").style.opacity=0;
+  await say(`¡${G.enemy.name} fue derrotado!`);
+  G.stats.defeated++;
+  return "win";
+}
+
+async function run(){
+  Sound.music("battle");
+  while(G.idx<ENEMIES.length){
+    const r = await battle();
+    if(r==="lose"){
+      Sound.sfx("lose");
+      await say("¡Te quedaste sin energía!");
+      G.player.hp=G.player.max; G.player.heals=Math.max(G.player.heals,2); G.player.streak=0;
+      await say("Un recuerdo de la esperanza te levanta. ¡Inténtalo otra vez!");
+      continue; // repite el mismo combate
+    }
+    // sube de nivel y recupera algo de energía
+    G.idx++;
+    if(G.idx<ENEMIES.length){
+      G.player.lv++; G.player.max+=10;
+      G.player.hp=Math.min(G.player.max,G.player.hp+Math.round(G.player.max*0.4));
+      if(G.player.heals<3) G.player.heals++;
+      refreshUI();
+      Sound.sfx("win");
+      await say(`¡${G.player.name} subió al nivel ${G.player.lv}! Recuperaste energía.`);
+    }
+  }
+  finish();
+}
+
+function finish(){
+  Sound.music("victory"); Sound.sfx("win");
+  const s=G.stats, pct=Math.round(s.ok/Math.max(1,s.total)*100);
+  $("endTitle").textContent="¡Casa común protegida!";
+  $("endStats").innerHTML=`Respuestas correctas: <b>${s.ok}/${s.total}</b> (${pct}%)<br>Enemigos derrotados: <b>${s.defeated}</b><br>Nivel final: <b>${G.player.lv}</b>`;
+  $("endMsg").textContent = pct>=75
+    ? "Comprendes muy bien las enseñanzas de Laudato si’. ¡Ahora llévalas a la práctica cada día!"
+    : "Cada pregunta fue una oportunidad para aprender. Vuelve a jugar y descubre más.";
+  $("end").classList.remove("hidden");
+}
+
+/* =====================================================================
+   6) ARRANQUE
+   ===================================================================== */
+if(ASSETS.backgrounds.battle) $("field").style.setProperty("--bg-img",`url("${ASSETS.backgrounds.battle}")`);
+if(ASSETS.backgrounds.title)  $("title").style.setProperty("--title-img",`url("${ASSETS.backgrounds.title}")`);
+
+$("mute").onclick=()=>{ $("mute").textContent = Sound.toggle()?"🔇":"🔊"; };
+$("startBtn").onclick=()=>{
+  newGame($("nameInput").value.trim());
+  $("title").classList.add("hidden");
+  Sound.sfx("select");
+  run();
+};
+$("againBtn").onclick=()=>{
+  $("end").classList.add("hidden");
+  newGame(G.player.name);
+  run();
+};
+$("nameInput").addEventListener("keydown",e=>{ if(e.key==="Enter")$("startBtn").click(); });
+Sound.music("title");
+// El navegador exige un gesto para reproducir audio; si falla, arranca al primer clic.
+document.addEventListener("click",()=>{ Sound.music("title"); },{once:true});
+// Vista previa inicial detrás del título
+setSprite($("enemySprite"),"","🌫️"); setSprite($("playerSprite"),"","🧒");
+$("pName").textContent="Guardián"; $("eName").textContent="???";
+</script>
+</body>
+</html>
