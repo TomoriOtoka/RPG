@@ -196,37 +196,56 @@ const ENEMIES = [
 
 // Preguntas (la 1ª opción es la correcta; se mezclan al mostrarlas)
 const Q = {
-  habitos:[
-    ["¿Qué haces con las luces que no necesitas?","Apagarlas","Dejarlas prendidas","Prender más"],
-    ["Al cepillarte los dientes, ¿qué es mejor?","Cerrar el grifo mientras cepillas","Dejar el agua corriendo","Llenar la tina"],
-    ["¿Qué conviene usar para llevar tu bebida?","Un termo reutilizable","Una botella desechable cada vez","Vasos de plástico"],
-    ["Sobró comida de la cena. ¿Qué haces?","Guardarla o compartirla","Botarla a la basura","Tirarla al río"],
-    ["¿Dónde va la basura?","En su basurero","En el suelo","En el río"],
-    ["La educación ambiental se concreta en…","Hábitos de cada día","Solo en los libros","Nunca se concreta"]
+  habitos: [
+    ["¿Cuál es el mensaje principal de Laudato si’?", "Cuidar nuestra casa común y proteger a las personas", "Promover el crecimiento económico sin límites", "Utilizar todos los recursos naturales"],
+    ["¿Quién escribió la encíclica Laudato si’?", "El papa Francisco", "El papa Benedicto XVI", "El papa Juan Pablo II"],
+    ["¿En qué santo se inspiró el papa Francisco para el título de la encíclica?", "San Francisco de Asís", "San Juan Bosco", "Santo Tomás de Aquino"],
+    ["¿Qué problema ambiental se analiza en el capítulo 1?", "El cambio climático y la contaminación", "La construcción de iglesias", "La historia del cristianismo"],
+    ["¿Qué enseña el capítulo 2 sobre la creación?", "Que es un don de Dios que debemos cuidar", "Que los recursos naturales son ilimitados", "Que la naturaleza no tiene relación con Dios"],
+    ["¿Qué critica el capítulo 3 sobre la tecnología?", "Su utilización sin responsabilidad ética ni límites", "Todos los avances científicos", "El uso de tecnología en la educación"],
+    ["¿Qué significa la ecología integral del capítulo 4?", "Cuidar la naturaleza y la sociedad porque están relacionadas", "Proteger únicamente a los animales", "Evitar toda actividad humana"],
+    ["¿Qué propone el capítulo 5 para enfrentar la crisis ambiental?", "Promover el diálogo y la cooperación internacional", "Que cada país actúe sin consultar a otros", "Que solamente las empresas tomen decisiones"],
+    ["¿Qué destaca el capítulo 6 para lograr un cambio ecológico?", "La educación y la espiritualidad ecológica", "El aumento del consumo", "La explotación de los recursos"],
+    ["¿Por qué el papa Francisco relaciona la pobreza con la crisis ambiental?", "Porque los más pobres sufren especialmente las consecuencias del deterioro ambiental", "Porque la pobreza no tiene relación con el ambiente", "Porque únicamente los pobres deben cuidar el planeta"]
   ],
-  amor:[
-    ["El parque del barrio está descuidado. ¿Qué haces?","Organizar con vecinos una jornada de cuidado","Ignorarlo","Ensuciarlo más"],
-    ["Un compañero está triste. ¿Qué haces?","Acompañarlo y escucharlo","Burlarme","Ignorarlo"],
-    ["El amor social busca…","El bien común","Solo mi beneficio","Competir con todos"],
-    ["¿Quiénes sufren más el daño ambiental?","Las personas más pobres","Nadie","Solo los turistas"],
-    ["¿Qué gesto expresa amor cotidiano?","Saludar con amabilidad y ayudar","Gritar","Excluir a otros"],
-    ["¿Dónde aprendemos los primeros hábitos de cuidado?","En la familia","En ninguna parte","Solo en las tiendas"]
+
+  amor: [
+    ["¿Qué comportamiento critica el papa Francisco?", "El consumo compulsivo e innecesario", "El ahorro responsable", "La solidaridad"],
+    ["¿Qué podemos hacer como consumidores para cuidar el ambiente?", "Elegir responsablemente lo que compramos", "Comprar productos sin pensar", "Consumir cada vez más"],
+    ["¿Cuál es el objetivo de la educación ambiental?", "Formar personas responsables del cuidado de la naturaleza", "Enseñar únicamente a reciclar papel", "Promover el consumo de productos"],
+    ["¿Dónde comienza la formación de buenos hábitos ecológicos?", "En la familia", "Solamente en las empresas", "Únicamente en las universidades"],
+    ["¿Cuál de estas acciones recomienda el papa Francisco?", "Apagar las luces innecesarias", "Desperdiciar agua", "Arrojar basura en las calles"],
+    ["¿Por qué es importante reutilizar materiales?", "Porque ayuda a reducir los residuos y el consumo de recursos", "Porque aumenta la contaminación", "Porque impide cuidar la naturaleza"],
+    ["¿Qué valor se fortalece al cuidar los espacios compartidos?", "El respeto por los demás y el ambiente", "El egoísmo", "La indiferencia"],
+    ["¿Qué enseñan las pequeñas acciones ecológicas?", "Que expresan amor y responsabilidad por la creación", "Que no tienen importancia", "Que solamente sirven cuando las realizan los gobiernos"],
+    ["¿Cómo podemos expresar el amor por la sociedad?", "Participando en acciones que favorezcan el bien común", "Pensando solamente en nuestros intereses", "Ignorando las necesidades de la comunidad"],
+    ["¿Qué demuestra una persona que cuida los espacios públicos?", "Responsabilidad y amor por su comunidad", "Desinterés por los demás", "Deseo de obtener beneficios personales"],
+    ["¿Qué propone el papa Francisco sobre el amor al prójimo?", "Manifestarlo también mediante acciones sociales y comunitarias", "Practicarlo solamente dentro de la familia", "Expresarlo únicamente con palabras"]
   ],
-  conversion:[
-    ["La conversión ecológica es…","Cambiar por dentro y actuar","Hablar sin cambiar nada","Culpar a los demás"],
-    ["Si reconoces que dañaste la creación, ¿qué haces?","Reconocerlo y cambiar mi conducta","Negarlo siempre","Ignorarlo"],
-    ["¿Qué actitud acompaña la conversión ecológica?","Gratitud por el mundo recibido","Avaricia","Indiferencia"],
-    ["¿La conversión ecológica es solo individual?","No, también es comunitaria","Sí, nadie más importa","Solo es de las empresas"],
-    ["Vivir con sobriedad significa…","Valorar lo necesario y disfrutar lo sencillo","Acumular sin límite","Comprar cada vez más"],
-    ["¿Quién escribió Laudato si’?","El papa Francisco","Un científico famoso","Un alcalde"]
+
+  conversion: [
+    ["¿Qué necesita cambiar principalmente la humanidad?", "Sus actitudes, convicciones y estilos de vida", "Únicamente sus leyes", "Solamente sus tecnologías"],
+    ["¿Qué significa cambiar nuestro estilo de vida?", "Adoptar hábitos responsables y solidarios", "Comprar siempre productos nuevos", "Ignorar los problemas ambientales"],
+    ["¿Qué significa la conversión ecológica?", "Transformar nuestra relación con Dios, las personas y la naturaleza", "Alejarnos de la sociedad", "Cuidar únicamente nuestros bienes"],
+    ["¿Qué debemos reconocer sobre la creación?", "Que es un regalo de Dios que debemos proteger", "Que pertenece exclusivamente al ser humano", "Que podemos destruirla sin consecuencias"],
+    ["¿Qué actitud demuestra una verdadera conversión ecológica?", "Gratitud, generosidad y compromiso", "Indiferencia ante la contaminación", "Consumismo y egoísmo"],
+    ["¿Por qué la conversión ecológica también debe ser comunitaria?", "Porque los problemas ambientales requieren esfuerzos compartidos", "Porque nadie puede cambiar sus hábitos", "Porque solamente las autoridades son responsables"]
   ],
-  esperanza:[
-    ["Laudato si’ significa…","Alabado seas","La voz del pueblo","La paz de todos"],
-    ["La «casa común» es…","El planeta que todos compartimos","Solo la casa de mi familia","Únicamente una iglesia"],
-    ["Laudato si’ termina con…","Dos oraciones por la creación","Una lista de compras","Un catálogo de productos"],
-    ["¿Qué actitud propone el final del capítulo 6?","Cuidar el mundo sin perder la esperanza","Rendirse","Esperar sin actuar"],
-    ["¿Qué aprendemos de san José?","Proteger y servir con ternura","Ignorar a los débiles","Buscar reconocimiento"],
-    ["El descanso nos ayuda a…","Renovar la relación con Dios, los demás y el mundo","Gastar más","Nada"]
+
+  esperanza: [
+    ["¿Qué significa vivir con sobriedad según el papa Francisco?", "Vivir con sencillez y sin excesos", "Rechazar toda comodidad", "Comprar para sentir felicidad"],
+    ["¿Qué enseñanza transmite la frase «menos es más»?", "Que podemos vivir mejor consumiendo menos", "Que debemos acumular objetos", "Que debemos producir más basura"],
+    ["¿Qué actitud nos ayuda a valorar los regalos de la creación?", "La gratitud", "La envidia", "La ambición"],
+    ["¿Qué propone el papa para recuperar la paz interior?", "Dedicar tiempo a la reflexión y la contemplación", "Vivir siempre apresurados", "Competir constantemente"],
+    ["¿Qué nos permite descubrir la naturaleza desde la fe?", "La presencia y el amor de Dios en la creación", "Que no tiene valor espiritual", "Que solamente importa su valor económico"],
+    ["¿Qué sacramento destaca el papa como expresión de la unión entre Dios y la creación?", "La Eucaristía", "El matrimonio civil", "Ninguno"],
+    ["¿Qué importancia tiene el descanso dominical?", "Favorecer la celebración, el descanso y las relaciones humanas", "Aumentar la productividad", "Dedicar el día únicamente a las compras"],
+    ["¿Qué nos enseña la Trinidad sobre nuestras relaciones?", "Que estamos llamados a vivir en comunión y relación con los demás", "Que debemos vivir aislados", "Que la naturaleza no tiene importancia"],
+    ["¿Qué debemos reconocer sobre los seres de la creación?", "Que están relacionados entre sí", "Que existen sin ninguna conexión", "Que solamente tienen valor económico"],
+    ["¿A quién presenta el papa Francisco como Reina de todo lo creado?", "A la Virgen María", "A santa Teresa de Calcuta", "A santa Clara de Asís"],
+    ["¿Qué ejemplo nos ofrece la Virgen María?", "El amor, la ternura y el cuidado", "El deseo de acumular riquezas", "La indiferencia ante el sufrimiento"],
+    ["¿Qué esperanza cristiana presenta el final del capítulo 6?", "La plenitud de la creación junto a Dios", "La desaparición de toda responsabilidad humana", "La importancia exclusiva de los bienes materiales"],
+    ["¿Cuál es el compromiso final que podemos asumir como jóvenes cristianos y salesianos?", "Proteger la casa común, ayudar al prójimo y vivir los valores cristianos", "Esperar que otros solucionen los problemas", "Cuidar solamente nuestros intereses"]
   ]
 };
 
